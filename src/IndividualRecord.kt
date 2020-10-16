@@ -6,6 +6,9 @@ private const val SPOUSE_FAMILY_TAG = " FAMS "
  */
 class IndividualRecord(record: Record) : Record(record.text) {
 
+    /**
+     * Returns the parent family reference id
+     */
     fun getParentFamily(): String? {
         for (subRecord in subRecords) {
             if (subRecord.text.contains(PARENT_FAMILY_TAG)) {
@@ -15,6 +18,9 @@ class IndividualRecord(record: Record) : Record(record.text) {
         return null
     }
 
+    /**
+     * Returns a list of spouse family reference ids
+     */
     fun getFamilies(): List<String> {
         val families = mutableListOf<String>()
         for (subRecord in subRecords) {

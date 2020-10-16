@@ -6,6 +6,10 @@ private const val CHILD_TAG = " CHIL "
  * Specific record for families
  */
 class FamilyRecord(record: Record) : Record(record.text) {
+
+    /**
+     * Returns the reference id of the husband of the family
+     */
     fun getHusband(): String? {
         for (subRecord in subRecords) {
             if (subRecord.text.contains(HUSBAND_TAG)) {
@@ -15,6 +19,9 @@ class FamilyRecord(record: Record) : Record(record.text) {
         return null
     }
 
+    /**
+     * Returns the reference id of the wife of the family
+     */
     fun getWife(): String? {
         for (subRecord in subRecords) {
             if (subRecord.text.contains(WIFE_TAG)) {
@@ -24,6 +31,9 @@ class FamilyRecord(record: Record) : Record(record.text) {
         return null
     }
 
+    /**
+     * Returns a list of reference ids of the children of the family
+     */
     fun getChildren(): List<String> {
         val children = mutableListOf<String>()
         for (subRecord in subRecords) {

@@ -22,6 +22,9 @@ class Gedcom {
 
     private val records: MutableMap<String, Record> = mutableMapOf()
 
+    /**
+     * Parse a GEDCOM file. Doesn't validate the GEDCOM format.
+     */
     fun parseFile(filename: String) {
         records.clear()
         val br = BufferedReader(FileReader(filename))
@@ -62,6 +65,9 @@ class Gedcom {
         }
     }
 
+    /**
+     * Removes all individual and family records not reachable from the given starting individual
+     */
     fun removeUnreachable(rootIndividual: IndividualRecord) {
         val traversedIndividuals = mutableSetOf<String>()
         val traversedFamilies = mutableSetOf<String>()
@@ -122,6 +128,9 @@ class Gedcom {
         }
     }
 
+    /**
+     * Canonicalizes, dedupes and removes unreachable records such as Notes and Sources
+     */
     fun cleanUpReferences(
         tag: String,
         referencePrefix: String
@@ -194,6 +203,9 @@ class Gedcom {
         }
     }
 
+    /**
+     * Gets a specific individual by reference id
+     */
     fun getIndividual(reference: String?): IndividualRecord? {
         if (reference in records) {
             val record = records[reference]
@@ -204,6 +216,9 @@ class Gedcom {
         return null
     }
 
+    /**
+     * Gets a specific family by reference id
+     */
     fun getFamily(reference: String?): FamilyRecord? {
         if (reference in records) {
             val record = records[reference]
@@ -214,6 +229,9 @@ class Gedcom {
         return null
     }
 
+    /**
+     * Saves the GEDCOM records to a file
+     */
     fun write(writer: Writer) {
         writer.write(utf8BOM)
         for (record: Record in records.values) {
