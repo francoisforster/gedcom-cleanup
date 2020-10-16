@@ -204,6 +204,44 @@ class Gedcom {
     }
 
     /**
+     * Validates that individual and family record events that match the given criteria are valid according
+     * to the given criteria
+     */
+    fun validateEvents(selectionCriteria: (Event) -> Boolean, validationCriteria: (Event, Gedcom) -> Boolean) {
+        val allEvents = mutableListOf<Event>()
+        for (key in records.keys) {
+            if (key.startsWith(INDIVIDUAL_REFERENCE_PREFIX)) {
+                val individual = getIndividual(key)
+                allEvents.safeAdd(individual?.getBirth())
+                allEvents.safeAdd(individual?.getDeath())
+            } else if (key.startsWith(FAMILY_REFERENCE_PREFIX)) {
+                val family = getFamily(key)
+                allEvents.safeAdd(family?.getMarriage())
+            }
+        }
+        var matchedEventCount = 0
+        var failedValidationCount = 0
+        for (event in allEvents) {
+            if (selectionCriteria.invoke(event)) {
+                matchedEventCount++
+                if (!validationCriteria.invoke(event, this)) {
+                    println("Validation failed for ${event.parentReferenceId}")
+                    failedValidationCount++
+                }
+            }
+        }
+        println("${allEvents.size} events found")
+        println("$matchedEventCount events matched criteria")
+        println("$failedValidationCount events failed validation")
+    }
+
+    private fun <T> MutableCollection<T>.safeAdd(element: T?) {
+        if (element != null) {
+            add(element)
+        }
+    }
+
+    /**
      * Gets a specific individual by reference id
      */
     fun getIndividual(reference: String?): IndividualRecord? {
@@ -223,6 +261,32 @@ class Gedcom {
         if (reference in records) {
             val record = records[reference]
             if (record is FamilyRecord) {
+                return record
+            }
+        }
+        return null
+    }
+
+    /**
+     * Gets a specific source by reference id
+     */
+    fun getSource(reference: String?): SourceRecord? {
+        if (reference in records) {
+            val record = records[reference]
+            if (record is SourceRecord) {
+                return record
+            }
+        }
+        return null
+    }
+
+    /**
+     * Gets a specific note by reference id
+     */
+    fun getNote(reference: String?): NoteRecord? {
+        if (reference in records) {
+            val record = records[reference]
+            if (record is NoteRecord) {
                 return record
             }
         }

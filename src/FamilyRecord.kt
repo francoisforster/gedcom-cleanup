@@ -1,6 +1,7 @@
 private const val HUSBAND_TAG = " HUSB "
 private const val WIFE_TAG = " WIFE "
 private const val CHILD_TAG = " CHIL "
+private const val MARRIAGE_TAG = " MARR"
 
 /**
  * Specific record for families
@@ -43,4 +44,17 @@ class FamilyRecord(record: Record) : Record(record.text) {
         }
         return children
     }
+
+    /**
+     * Returns the marriage event
+     */
+    fun getMarriage(): Event? {
+        for (subRecord in subRecords) {
+            if (subRecord.text.contains(MARRIAGE_TAG)) {
+                return subRecord.parseEvent(getReferenceId())
+            }
+        }
+        return null
+    }
+
 }

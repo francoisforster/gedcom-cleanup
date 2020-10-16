@@ -1,5 +1,8 @@
 import java.io.Writer
 
+private const val DATE_TAG = " DATE "
+private const val PLACE_TAG = " PLAC "
+
 /**
  * Generic nestable record which contains a line of text and sub records
  */
@@ -31,7 +34,7 @@ open class Record(var text: String) {
         return text == otherRecord?.text
     }
 
-    fun matches(text1: String?, text2: String?): Boolean {
+    protected fun matches(text1: String?, text2: String?): Boolean {
         if (text1 == null || text2 == null) {
             return text1 == null && text2 == null
         }
@@ -52,6 +55,26 @@ open class Record(var text: String) {
             return null
         }
         return parts[part]
+    }
+
+    fun parseEvent(parentReferenceId: String?): Event {
+        var date: String? = null
+        var place: String? = null
+        var source: String? = null
+        for (subRecord in subRecords) {
+            when {
+                subRecord.text.contains(DATE_TAG) -> {
+                    date = subRecord.text.substring(7)
+                }
+                subRecord.text.contains(PLACE_TAG) -> {
+                    place = subRecord.text.substring(7)
+                }
+                subRecord.text.contains(SOURCE_TAG) -> {
+                    source = subRecord.text.substring(7)
+                }
+            }
+        }
+        return Event(parentReferenceId, date, place, source)
     }
 
 }

@@ -1,5 +1,4 @@
 private const val TITLE_TAG = " TITL "
-
 private const val TEXT_TAG = " TEXT "
 
 /**
@@ -7,8 +6,16 @@ private const val TEXT_TAG = " TEXT "
  */
 class SourceRecord(record: Record) : Record(record.text) {
 
+    fun getSourceTitle(): String? {
+        return getSubRecord(TITLE_TAG)?.text
+    }
+
+    fun getSourceText(): String? {
+        return getSubRecord(TEXT_TAG)?.text
+    }
+
     override fun matches(otherRecord: Record?): Boolean {
-        return matches(getSubRecord(TITLE_TAG)?.text, otherRecord?.getSubRecord(TITLE_TAG)?.text) &&
-                matches(getSubRecord(TEXT_TAG)?.text, otherRecord?.getSubRecord(TEXT_TAG)?.text)
+        return otherRecord is SourceRecord && matches(getSourceTitle(), otherRecord?.getSourceTitle()) &&
+                matches(getSourceText(), otherRecord?.getSourceText())
     }
 }
