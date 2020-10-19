@@ -70,7 +70,7 @@ open class Record(var text: String) {
                     place = subRecord.text.substring(7)
                 }
                 subRecord.text.contains(SOURCE_TAG) -> {
-                    source = subRecord.text.substring(7)
+                    source = subRecord.getReference()
                 }
             }
         }

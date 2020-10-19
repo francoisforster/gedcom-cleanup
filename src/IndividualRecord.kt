@@ -12,12 +12,7 @@ class IndividualRecord(record: Record) : Record(record.text) {
      * Returns the parent family reference id
      */
     fun getParentFamily(): String? {
-        for (subRecord in subRecords) {
-            if (subRecord.text.contains(PARENT_FAMILY_TAG)) {
-                return subRecord.text.substring(7)
-            }
-        }
-        return null
+        return getSubRecord(PARENT_FAMILY_TAG)?.getReference()
     }
 
     /**
@@ -27,7 +22,7 @@ class IndividualRecord(record: Record) : Record(record.text) {
         val families = mutableListOf<String>()
         for (subRecord in subRecords) {
             if (subRecord.text.contains(SPOUSE_FAMILY_TAG)) {
-                families.add(subRecord.text.substring(7))
+                families.safeAdd(subRecord.getReference())
             }
         }
         return families
@@ -37,24 +32,14 @@ class IndividualRecord(record: Record) : Record(record.text) {
      * Returns the birth event
      */
     fun getBirth(): Event? {
-        for (subRecord in subRecords) {
-            if (subRecord.text.contains(BIRTH_TAG)) {
-                return subRecord.parseEvent(getReferenceId())
-            }
-        }
-        return null
+        return getSubRecord(BIRTH_TAG)?.parseEvent(getReferenceId())
     }
 
     /**
      * Returns the death event
      */
     fun getDeath(): Event? {
-        for (subRecord in subRecords) {
-            if (subRecord.text.contains(DEATH_TAG)) {
-                return subRecord.parseEvent(getReferenceId())
-            }
-        }
-        return null
+        return getSubRecord(DEATH_TAG)?.parseEvent(getReferenceId())
     }
 
 }

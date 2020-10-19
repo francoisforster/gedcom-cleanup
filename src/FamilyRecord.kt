@@ -14,7 +14,7 @@ class FamilyRecord(record: Record) : Record(record.text) {
     fun getHusband(): String? {
         for (subRecord in subRecords) {
             if (subRecord.text.contains(HUSBAND_TAG)) {
-                return subRecord.text.substring(7)
+                return subRecord.getReference()
             }
         }
         return null
@@ -26,7 +26,7 @@ class FamilyRecord(record: Record) : Record(record.text) {
     fun getWife(): String? {
         for (subRecord in subRecords) {
             if (subRecord.text.contains(WIFE_TAG)) {
-                return subRecord.text.substring(7)
+                return subRecord.getReference()
             }
         }
         return null
@@ -39,7 +39,7 @@ class FamilyRecord(record: Record) : Record(record.text) {
         val children = mutableListOf<String>()
         for (subRecord in subRecords) {
             if (subRecord.text.contains(CHILD_TAG)) {
-                children.add(subRecord.text.substring(7))
+                children.safeAdd(subRecord.getReference())
             }
         }
         return children

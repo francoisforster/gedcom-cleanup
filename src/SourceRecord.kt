@@ -15,7 +15,8 @@ class SourceRecord(record: Record) : Record(record.text) {
     }
 
     override fun matches(otherRecord: Record?): Boolean {
-        return otherRecord is SourceRecord && matches(getSourceTitle(), otherRecord?.getSourceTitle()) &&
+        return otherRecord is SourceRecord &&
+                matches(getSourceTitle(), otherRecord?.getSourceTitle()) &&
                 matches(getSourceText(), otherRecord?.getSourceText())
     }
 }

@@ -15,6 +15,12 @@ const val FAMILY_REFERENCE_PREFIX = "@F"
 
 private const val utf8BOM = "\uFEFF"
 
+fun <T> MutableCollection<T>.safeAdd(element: T?) {
+    if (element != null) {
+        add(element)
+    }
+}
+
 /**
  * Class that represents gedcom data
  */
@@ -131,10 +137,7 @@ class Gedcom {
     /**
      * Canonicalizes, dedupes and removes unreachable records such as Notes and Sources
      */
-    fun cleanUpReferences(
-        tag: String,
-        referencePrefix: String
-    ) {
+    fun cleanUpReferences(tag: String, referencePrefix: String) {
         val canonicalReferences = generateCanonicalReferences(referencePrefix)
         val allReferences = mutableSetOf<String>()
         val traversedReferences = mutableSetOf<String>()
@@ -161,9 +164,7 @@ class Gedcom {
 
     }
 
-    private fun generateCanonicalReferences(
-        referencePrefix: String
-    ): Map<String, String> {
+    private fun generateCanonicalReferences(referencePrefix: String): Map<String, String> {
         val canonicalReferences = mutableMapOf<String, String>()
         for (key in records.keys) {
             if (key.startsWith(referencePrefix)) {
@@ -235,58 +236,39 @@ class Gedcom {
         println("$failedValidationCount events failed validation")
     }
 
-    private fun <T> MutableCollection<T>.safeAdd(element: T?) {
-        if (element != null) {
-            add(element)
-        }
-    }
 
     /**
      * Gets a specific individual by reference id
      */
     fun getIndividual(reference: String?): IndividualRecord? {
-        if (reference in records) {
-            val record = records[reference]
-            if (record is IndividualRecord) {
-                return record
-            }
-        }
-        return null
+        return getRecord(reference)
     }
 
     /**
      * Gets a specific family by reference id
      */
     fun getFamily(reference: String?): FamilyRecord? {
-        if (reference in records) {
-            val record = records[reference]
-            if (record is FamilyRecord) {
-                return record
-            }
-        }
-        return null
+        return getRecord(reference)
     }
 
     /**
      * Gets a specific source by reference id
      */
     fun getSource(reference: String?): SourceRecord? {
-        if (reference in records) {
-            val record = records[reference]
-            if (record is SourceRecord) {
-                return record
-            }
-        }
-        return null
+        return getRecord(reference)
     }
 
     /**
      * Gets a specific note by reference id
      */
     fun getNote(reference: String?): NoteRecord? {
+        return getRecord(reference)
+    }
+
+    private inline fun <reified T : Record> getRecord(reference: String?): T? {
         if (reference in records) {
             val record = records[reference]
-            if (record is NoteRecord) {
+            if (record is T) {
                 return record
             }
         }
