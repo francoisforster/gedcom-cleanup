@@ -26,7 +26,7 @@ fun <T> MutableCollection<T>.safeAdd(element: T?) {
  */
 class Gedcom {
 
-    private val records: MutableMap<String, Record> = mutableMapOf()
+    private val records = mutableMapOf<String, Record>()
 
     /**
      * Parse a GEDCOM file. Doesn't validate the GEDCOM format.
@@ -34,10 +34,10 @@ class Gedcom {
     fun parseFile(filename: String) {
         records.clear()
         val br = BufferedReader(FileReader(filename))
-        val recordStack: Stack<Record> = Stack()
+        val recordStack = Stack<Record>()
         var previousRecord: Record? = null
         var previousLevel = 0
-        var line: String? = br.readLine()
+        var line = br.readLine()
         while (line != null) {
             if (line.startsWith(utf8BOM)) {
                 line = line.substring(1)

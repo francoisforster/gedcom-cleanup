@@ -19,13 +19,7 @@ class IndividualRecord(record: Record) : Record(record.text) {
      * Returns a list of spouse family reference ids
      */
     fun getFamilies(): List<String> {
-        val families = mutableListOf<String>()
-        for (subRecord in subRecords) {
-            if (subRecord.text.contains(SPOUSE_FAMILY_TAG)) {
-                families.safeAdd(subRecord.getReference())
-            }
-        }
-        return families
+        return getSubRecordReferences(SPOUSE_FAMILY_TAG)
     }
 
     /**

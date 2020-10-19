@@ -22,6 +22,16 @@ open class Record(var text: String) {
         return null
     }
 
+    fun getSubRecordReferences(tag: String): List<String> {
+        val references = mutableListOf<String>()
+        for (subRecord in subRecords) {
+            if (subRecord.text.contains(tag)) {
+                references.safeAdd(subRecord.getReference())
+            }
+        }
+        return references
+    }
+
     fun write(writer: Writer) {
         writer.write(text)
         writer.write("\r\n")
