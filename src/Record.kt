@@ -22,6 +22,15 @@ open class Record(var text: String) {
         return null
     }
 
+    fun getSubRecordEndsWith(tag: String): Record? {
+        for (subRecord in subRecords) {
+            if (subRecord.text.trim().endsWith(tag)) {
+                return subRecord
+            }
+        }
+        return null
+    }
+
     fun getSubRecordReferences(tag: String): List<String> {
         val references = mutableListOf<String>()
         for (subRecord in subRecords) {

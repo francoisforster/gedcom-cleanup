@@ -33,7 +33,7 @@ class FamilyRecord(record: Record) : Record(record.text) {
      * Returns the marriage event
      */
     fun getMarriage(): Event? {
-        return getSubRecord(MARRIAGE_TAG)?.parseEvent(getReferenceId())
+        return getSubRecordEndsWith(MARRIAGE_TAG)?.parseEvent(getReferenceId())
     }
 
 }
