@@ -13,6 +13,7 @@ Usage example:
 import java.io.FileWriter
 
 fun main() {
+    // clean up GEDCOM file
     val gedcom = Gedcom()
     gedcom.parseFile("<Input GEDCOM filename>")
     val rootIndividual = gedcom.getIndividual("<Starting Individual Reference Id>")
@@ -24,14 +25,18 @@ fun main() {
     val writer = FileWriter("<Output GEDCOM filename>")
     gedcom.write(writer)
     writer.close()
-    
+ 
+    // validate sources
+    gedcom.validateEvents(::selectByPlaceAndYear, ::validateSource)
+
+    // compare GEDCOM files
     val otherGedcom = Gedcom()
     otherGedcom.parseFile("<Other GEDCOM filename>")
     val gedcomCompare = GedcomCompare(gedcom, otherGedcom)
     gedcomCompare.compareFrom("<Starting Individual Reference Id in GEDCOM file>", "<Starting Individual Reference Id in other GEDCOM file>")
 }
 
-fun selectTranscribed(event: Event): Boolean {
+fun selectByPlaceAndYear(event: Event): Boolean {
     val year = event.getYear()
     return event.place?.contains("<PLACE>") == true && year != null && year >= <FROM YEAR> && year <= <TO YEAR>
 }
