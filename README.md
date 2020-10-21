@@ -6,7 +6,7 @@ The application assumes a well-formed GEDCOM file, doesn't enforce the format an
 
 It can also perform some validation on individuals, such as ensuring that sources are specified for all events (birth, death, marriage) that took place at a particular place.
 
-It can also compares 2 GEDCOM files from a specified root individual, providing information on differences of names, events and individuals (parents, children, wifes) missing from either file.
+It can also compares 2 GEDCOM files from a specified root individual, providing information on differences of names, events and individuals (parents, children, spouses) missing from either file.
 
 Usage example:
 ```kotlin
