@@ -4,6 +4,10 @@ A simple Kotlin library that cleans up GEDCOM (https://en.wikipedia.org/wiki/GED
 
 The application assumes a well-formed GEDCOM file, doesn't enforce the format and doesn't implement all its specifications.
 
+It can also perform some validation on individuals, such as ensuring that sources are specified for all events (birth, death, marriage) that took place at a particular place.
+
+It can also compares 2 GEDCOM files from a specified root individual, providing information on differences of names, events and individuals (parents, children, wifes) missing from either file.
+
 Usage example:
 ```kotlin
 import java.io.FileWriter
@@ -20,6 +24,21 @@ fun main() {
     val writer = FileWriter("<Output GEDCOM filename>")
     gedcom.write(writer)
     writer.close()
+    
+    val otherGedcom = Gedcom()
+    otherGedcom.parseFile("<Other GEDCOM filename>")
+    val gedcomCompare = GedcomCompare(gedcom, otherGedcom)
+    gedcomCompare.compareFrom("<Starting Individual Reference Id in GEDCOM file>", "<Starting Individual Reference Id in other GEDCOM file>")
+}
+
+fun selectTranscribed(event: Event): Boolean {
+    val year = event.getYear()
+    return event.place?.contains("<PLACE>") == true && year != null && year >= <FROM YEAR> && year <= <TO YEAR>
+}
+
+fun validateSource(event: Event, gedcom: Gedcom): Boolean {
+    val source = gedcom.getSource(event.source)
+    return source != null && source.getSourceText()?.contains("http://...") == true
 }
 
 ```
