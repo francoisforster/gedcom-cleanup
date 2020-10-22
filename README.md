@@ -2,13 +2,17 @@ A simple Kotlin library that cleans up GEDCOM (https://en.wikipedia.org/wiki/GED
 * removing unreachable individuals and families (from a given starting individual)
 * canonicalizing Notes and Sources and removing duplicates and unreachable ones
 
-The application assumes a well-formed GEDCOM file, doesn't enforce the format and doesn't implement all its specifications.
+It can also compares 2 GEDCOM files from a specified root individual, providing information on differences of names and event places or dates, as well as events and individuals (parents, children, spouses) missing from either file.
 
 It can also perform some validation on individuals, such as ensuring that sources are specified for all events (birth, death, marriage) that took place at a particular place.
 
-It can also compares 2 GEDCOM files from a specified root individual, providing information on differences of names, events and individuals (parents, children, spouses) missing from either file.
+For convenience, executable jars are provided to perfrom cleanup and comparison (only java runtime is needed to run):
+* ```java -jar gedcom-cleanup.jar <Input GEDCOM filename> <Starting Individual Reference Id> <Output GEDCOM filename>```
+* ```java -jar gedcom-compare.jar <Input GEDCOM filename> <Starting Individual Reference Id> <Other Input GEDCOM filename> <Starting Individual Reference Id from Other GEDCOM file>```
 
-Usage example:
+The library assumes a well-formed GEDCOM file, doesn't enforce the format and doesn't implement all its specifications.
+
+Library Usage example:
 ```kotlin
 import java.io.FileWriter
 
