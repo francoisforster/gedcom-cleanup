@@ -35,5 +35,5 @@ fun similar(left: String?, right: String?): Boolean {
     if (left == null || right == null) {
         return left == null && right == null
     }
-    return levenshtein(left, right) < 10
+    return levenshtein(left, right) < (left.length + right.length) / 6
 }

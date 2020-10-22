@@ -3,6 +3,7 @@ private const val SPOUSE_FAMILY_TAG = " FAMS "
 private const val BIRTH_TAG = " BIRT"
 private const val DEATH_TAG = " DEAT"
 private const val NAME_TAG = " NAME "
+private const val GENDER_TAG = " SEX "
 
 /**
  * Specific record for individuals
@@ -54,6 +55,10 @@ class IndividualRecord(record: Record) : Record(record.text) {
             return "$firstname $lastname"
         }
         return null
+    }
+
+    fun getGender(): Char? {
+        return getSubRecord(GENDER_TAG)?.text?.substring(6, 7)?.getOrNull(0)
     }
 
 }

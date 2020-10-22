@@ -1,7 +1,7 @@
 fun main(args: Array<String>) {
     if (args.size < 4) {
         println("Usage: java -jar gedcom-compare <input GEDCOM filename> <root individual reference> <other GEDCOM filename> <root individual reference in other GEDCOM file>")
-	return
+        return
     }
     val gedcom = Gedcom()
     gedcom.parseFile(args[0])

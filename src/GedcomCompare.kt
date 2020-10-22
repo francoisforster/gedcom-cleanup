@@ -232,6 +232,9 @@ class GedcomCompare(private val leftGedcom: Gedcom, private val rightGedcom: Ged
 
     private fun matchIndividualScore(leftIndividual: IndividualRecord, rightIndividual: IndividualRecord): Int {
         var result = 0
+        if (leftIndividual.getGender() != null && rightIndividual.getGender() != null && leftIndividual.getGender() != rightIndividual.getGender()) {
+            return result
+        }
         if (leftIndividual.getBirth()?.matches(rightIndividual.getBirth()) == true) {
             result += 20
         }
