@@ -10,6 +10,11 @@ class GedcomCompare(private val leftGedcom: Gedcom, private val rightGedcom: Ged
         }
     }
 
+    /**
+     * Compares the same individual from both the left and the right files.
+     * Name, birth, death difference or indicates if they are missing from one side.
+     * Traverses to matched parents, spouses and children or indicates if they are missing from one side.
+     */
     private fun compareIndividuals(
         leftIndividual: IndividualRecord,
         rightIndividual: IndividualRecord,
@@ -84,13 +89,17 @@ class GedcomCompare(private val leftGedcom: Gedcom, private val rightGedcom: Ged
         }
     }
 
+    /**
+     * Matches husbands, wives and children from a marriage and compares them. Matching is lenient and uses some score calculated on the
+     * marriage or individual.
+     */
     private fun compareFamilies(
         leftFamilyReferences: List<String>,
         rightFamilyReferences: List<String>
     ): List<Triple<IndividualRecord?, IndividualRecord?, String>> {
         val leftFamilies = hydrateFamilies(leftFamilyReferences, leftGedcom)
         val rightFamilies = hydrateFamilies(rightFamilyReferences, rightGedcom)
-        val matchedFamilies = matchRecords(leftFamilies, rightFamilies, ::matchFamily)
+        val matchedFamilies = matchRecords(leftFamilies, rightFamilies, ::matchFamilyScore)
         val result = mutableListOf<Triple<IndividualRecord?, IndividualRecord?, String>>()
         for (i in matchedFamilies.first.indices) {
             val leftFamily = matchedFamilies.first[i]
@@ -116,7 +125,7 @@ class GedcomCompare(private val leftGedcom: Gedcom, private val rightGedcom: Ged
             if (leftFamily != null && rightFamily != null) {
                 val leftChildren = hydrateIndividuals(leftFamily.getChildren(), leftGedcom)
                 val rightChildren = hydrateIndividuals(rightFamily.getChildren(), rightGedcom)
-                val matchedChildren = matchRecords(leftChildren, rightChildren, ::matchChild)
+                val matchedChildren = matchRecords(leftChildren, rightChildren, ::matchIndividualScore)
                 for (j in matchedChildren.first.indices) {
                     result.add(
                         Triple(
@@ -131,16 +140,21 @@ class GedcomCompare(private val leftGedcom: Gedcom, private val rightGedcom: Ged
         return result
     }
 
+    /**
+     * Matches all the specified records on the left (for example families or children) with all corresponding records
+     * on the right, ranks them by score decreasing and picks the highest score matches. What isn't matched remains
+     * as entries on one side only
+     */
     private fun <T> matchRecords(
         leftRecords: List<T>,
         rightRecords: List<T>,
-        matchScoreMethod: (T, List<T>) -> List<Triple<T, T, Int>>
+        matchScoreMethod: (T, T) -> Int
     ): Pair<List<T?>, List<T?>> {
         val left = mutableListOf<T?>()
         val right = mutableListOf<T?>()
         val pairWiseMatches = mutableListOf<Triple<T, T, Int>>()
         for (record in leftRecords) {
-            pairWiseMatches.addAll(matchScoreMethod.invoke(record, rightRecords))
+            pairWiseMatches.addAll(pairAndScoreRecord(record, rightRecords, matchScoreMethod))
         }
         val sortedPairWiseMatches = pairWiseMatches.sortedWith(Comparator.comparingInt { -it.third })
         val placedRecords = mutableSetOf<T>()
@@ -156,12 +170,14 @@ class GedcomCompare(private val leftGedcom: Gedcom, private val rightGedcom: Ged
                 }
             }
         }
+        // unmatched records on the left
         for (record in leftRecords) {
             if (record !in placedRecords) {
                 left.add(record)
                 right.add(null)
             }
         }
+        // unmatched records on the right
         for (record in rightRecords) {
             if (record !in placedRecords) {
                 left.add(null)
@@ -171,23 +187,30 @@ class GedcomCompare(private val leftGedcom: Gedcom, private val rightGedcom: Ged
         return Pair(left, right)
     }
 
-    private fun matchFamily(
-        leftFamily: FamilyRecord,
-        rightFamilies: List<FamilyRecord>
-    ): List<Triple<FamilyRecord, FamilyRecord, Int>> {
-        val result = mutableListOf<Triple<FamilyRecord, FamilyRecord, Int>>()
-        for (rightFamily in rightFamilies) {
+    /**
+     * Pairs a specific record from the left file with a list of records from the right file and scores them
+     */
+    private fun <T> pairAndScoreRecord(
+        leftRecord: T,
+        rightRecords: List<T>,
+        matchScoreMethod: (T, T) -> Int
+    ): List<Triple<T, T, Int>> {
+        val result = mutableListOf<Triple<T, T, Int>>()
+        for (rightRecord in rightRecords) {
             result.add(
                 Triple(
-                    leftFamily,
-                    rightFamily,
-                    matchFamilyScore(leftFamily, rightFamily)
+                    leftRecord,
+                    rightRecord,
+                    matchScoreMethod.invoke(leftRecord, rightRecord)
                 )
             )
         }
         return result
     }
 
+    /**
+     * Try to score a match between families. Marriage event is the most important, followed by similarity in spouse names
+     */
     private fun matchFamilyScore(
         leftFamily: FamilyRecord,
         rightFamily: FamilyRecord
@@ -213,23 +236,9 @@ class GedcomCompare(private val leftGedcom: Gedcom, private val rightGedcom: Ged
         return result
     }
 
-    private fun matchChild(
-        leftChild: IndividualRecord,
-        rightChildren: List<IndividualRecord>
-    ): List<Triple<IndividualRecord, IndividualRecord, Int>> {
-        val result = mutableListOf<Triple<IndividualRecord, IndividualRecord, Int>>()
-        for (rightChild in rightChildren) {
-            result.add(
-                Triple(
-                    leftChild,
-                    rightChild,
-                    matchIndividualScore(leftChild, rightChild)
-                )
-            )
-        }
-        return result
-    }
-
+    /**
+     * Try to score a match between individuals. Birth is the most important, followed by death and name. Ensure same gender
+     */
     private fun matchIndividualScore(leftIndividual: IndividualRecord, rightIndividual: IndividualRecord): Int {
         var result = 0
         if (leftIndividual.getGender() != null && rightIndividual.getGender() != null && leftIndividual.getGender() != rightIndividual.getGender()) {
@@ -274,10 +283,10 @@ class GedcomCompare(private val leftGedcom: Gedcom, private val rightGedcom: Ged
         }
         if (leftEvent == null || rightEvent == null) {
             if (leftEvent != null) {
-                println("\tFound $label on left but not right: $leftEvent")
+                println("\tFound $label on the left but not the right: $leftEvent")
             }
             if (rightEvent != null) {
-                println("\tFound $label on right but not left: $rightEvent")
+                println("\tFound $label on the right but not the left: $rightEvent")
             }
         } else {
             if (!leftEvent.matches(rightEvent)) {
