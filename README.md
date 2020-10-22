@@ -6,7 +6,7 @@ It can also compares 2 GEDCOM files from a specified root individual, providing 
 
 It can also perform some validation on individuals, such as ensuring that sources are specified for all events (birth, death, marriage) that took place at a particular place.
 
-For convenience, executable jars are provided to perfrom cleanup and comparison (only java runtime is needed to run):
+For convenience, executable jars are provided to perform cleanup and comparison (only java runtime is needed to run):
 * ```java -jar gedcom-cleanup.jar <Input GEDCOM filename> <Starting Individual Reference Id> <Output GEDCOM filename>```
 * ```java -jar gedcom-compare.jar <Input GEDCOM filename> <Starting Individual Reference Id> <Other Input GEDCOM filename> <Starting Individual Reference Id from Other GEDCOM file>```
 
