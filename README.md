@@ -10,6 +10,8 @@ For convenience, executable jars are provided to perform cleanup and comparison 
 * ```java -jar gedcom-cleanup.jar <Input GEDCOM filename> <Starting Individual Reference Id> <Output GEDCOM filename>```
 * ```java -jar gedcom-compare.jar <Input GEDCOM filename> <Starting Individual Reference Id> <Other Input GEDCOM filename> <Starting Individual Reference Id from Other GEDCOM file>```
 
+where individual reference id is in the form ```"@I35@"```
+
 The library assumes a well-formed GEDCOM file, doesn't enforce the format and doesn't implement all its specifications.
 
 Library Usage example:
