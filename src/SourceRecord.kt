@@ -19,4 +19,10 @@ class SourceRecord(record: Record) : Record(record.text) {
                 matches(getSourceTitle(), otherRecord.getSourceTitle()) &&
                 matches(getSourceText(), otherRecord.getSourceText())
     }
+    
+    override fun clone(): SourceRecord {
+        val clone = SourceRecord(this)
+        cloneSubRecords(clone)
+        return clone
+    }
 }

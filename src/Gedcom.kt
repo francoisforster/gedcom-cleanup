@@ -3,6 +3,8 @@ import java.io.FileReader
 import java.io.Writer
 import java.util.*
 
+const val TRAILER = "0 TRLR"
+
 const val SOURCE_TAG = " SOUR "
 const val SOURCE_REFERENCE_PREFIX = "@S"
 
@@ -28,6 +30,11 @@ class Gedcom {
 
     private val records = mutableMapOf<String, Record>()
 
+    private val individualIds = mutableSetOf<Int>()
+    private val familyIds = mutableSetOf<Int>()
+    private val noteIds = mutableSetOf<Int>()
+    private val sourceIds = mutableSetOf<Int>()
+
     /**
      * Parse a GEDCOM file. Doesn't validate the GEDCOM format.
      */
@@ -48,13 +55,27 @@ class Gedcom {
                 val reference = record.getReferenceId()
                 if (reference != null) {
                     record = when (reference.substring(0, 2)) {
-                        NOTE_REFERENCE_PREFIX -> NoteRecord(record)
-                        SOURCE_REFERENCE_PREFIX -> SourceRecord(record)
-                        INDIVIDUAL_REFERENCE_PREFIX -> IndividualRecord(record)
-                        FAMILY_REFERENCE_PREFIX -> FamilyRecord(record)
+                        NOTE_REFERENCE_PREFIX -> {
+                            noteIds.add(parseReferenceId(reference))
+                            NoteRecord(record)
+                        }
+                        SOURCE_REFERENCE_PREFIX -> {
+                            sourceIds.add(parseReferenceId(reference))
+                            SourceRecord(record)
+                        }
+                        INDIVIDUAL_REFERENCE_PREFIX -> {
+                            individualIds.add(parseReferenceId(reference))
+                            IndividualRecord(record)
+                        }
+                        FAMILY_REFERENCE_PREFIX ->  {
+                            familyIds.add(parseReferenceId(reference))
+                            FamilyRecord(record)
+                        }
                         else -> record
                     }
-                    records[reference] = record
+                    if (!line.startsWith(TRAILER)) {
+                        records[reference] = record
+                    }
                 }
                 recordStack.empty()
             } else {
@@ -240,34 +261,54 @@ class Gedcom {
     /**
      * Gets a specific individual by reference id
      */
-    fun getIndividual(reference: String?): IndividualRecord? {
-        return getRecord(reference)
+    fun getIndividual(referenceId: String?): IndividualRecord? {
+        return getRecord(referenceId)
+    }
+
+    fun addIndividual(referenceId: String, individual: IndividualRecord) {
+        records[referenceId] = individual
+        individualIds.add(parseReferenceId(referenceId))
     }
 
     /**
      * Gets a specific family by reference id
      */
-    fun getFamily(reference: String?): FamilyRecord? {
-        return getRecord(reference)
+    fun getFamily(referenceId: String?): FamilyRecord? {
+        return getRecord(referenceId)
+    }
+
+    fun addFamily(referenceId: String, family: FamilyRecord) {
+        records[referenceId] = family
+        familyIds.add(parseReferenceId(referenceId))
     }
 
     /**
      * Gets a specific source by reference id
      */
-    fun getSource(reference: String?): SourceRecord? {
-        return getRecord(reference)
+    fun getSource(referenceId: String?): SourceRecord? {
+        return getRecord(referenceId)
+    }
+
+    fun addSource(referenceId: String, source: SourceRecord) {
+        records[referenceId] = source
+        sourceIds.add(parseReferenceId(referenceId))
     }
 
     /**
      * Gets a specific note by reference id
      */
-    fun getNote(reference: String?): NoteRecord? {
-        return getRecord(reference)
+    fun getNote(referenceId: String?): NoteRecord? {
+        return getRecord(referenceId)
     }
 
-    private inline fun <reified T : Record> getRecord(reference: String?): T? {
-        if (reference in records) {
-            val record = records[reference]
+    fun addNote(referenceId: String, note: NoteRecord) {
+        records[referenceId] = note
+        sourceIds.add(parseReferenceId(referenceId))
+    }
+
+    private inline fun <reified T : Record> getRecord(referenceId: String?): T? {
+        if (referenceId in records) {
+            val record = records[referenceId]
             if (record is T) {
                 return record
             }
@@ -283,5 +324,35 @@ class Gedcom {
         for (record: Record in records.values) {
             record.write(writer)
         }
+        writer.write(TRAILER)
+        writer.write("\r\n")
+    }
+
+    fun generateIndividualReferenceId(): String {
+        return generateReferenceId(individualIds, INDIVIDUAL_REFERENCE_PREFIX)
+    }
+
+    fun generateFamilyReferenceId(): String {
+        return generateReferenceId(familyIds, FAMILY_REFERENCE_PREFIX)
+    }
+
+    fun generateNoteReferenceId(): String {
+        return generateReferenceId(noteIds, NOTE_REFERENCE_PREFIX)
+    }
+
+    fun generateSourceReferenceId(): String {
+        return generateReferenceId(sourceIds, SOURCE_REFERENCE_PREFIX)
+    }
+
+    private fun generateReferenceId(ids: MutableSet<Int>, prefix: String): String {
+        var id = 1
+        while (ids.contains(id)) {
+            id++
+        }
+        return "${prefix}${id}@"
+    }
+
+    private fun parseReferenceId(referenceIdStr: String): Int {
+        return referenceIdStr.substring(2, referenceIdStr.length - 1).toInt()
     }
 }

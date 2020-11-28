@@ -10,4 +10,9 @@ class NoteRecord(record: Record) : Record(record.text) {
         return text.substring(7) == otherRecord?.text?.substring(7)
     }
 
+    override fun clone(): NoteRecord {
+        val clone = NoteRecord(this)
+        cloneSubRecords(clone)
+        return clone
+    }
 }

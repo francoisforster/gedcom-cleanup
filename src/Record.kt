@@ -41,6 +41,10 @@ open class Record(var text: String) {
         return references
     }
 
+    fun removeSubRecord(tag: String) {
+        subRecords.removeAll { subRecord -> subRecord.text.contains(tag) }
+    }
+
     fun write(writer: Writer) {
         writer.write(text)
         writer.write("\r\n")
@@ -64,6 +68,11 @@ open class Record(var text: String) {
         return getPartSafe(1)
     }
 
+    fun setReferenceId(newId: String) {
+        val parts = text.split(" ")
+        text = parts[0] + " " + newId + " " + parts[2]
+    }
+
     fun getReference(): String? {
         return getPartSafe(2)
     }
@@ -80,6 +89,7 @@ open class Record(var text: String) {
         var date: String? = null
         var place: String? = null
         var source: String? = null
+        var note: String? = null
         for (subRecord in subRecords) {
             when {
                 subRecord.text.contains(DATE_TAG) -> {
@@ -91,9 +101,24 @@ open class Record(var text: String) {
                 subRecord.text.contains(SOURCE_TAG) -> {
                     source = subRecord.getReference()
                 }
+                subRecord.text.contains(NOTE_TAG) -> {
+                    note = subRecord.getReference()
+                }
             }
         }
-        return Event(parentReferenceId, date, place, source)
+        return Event(parentReferenceId, this, date, place, source, note)
+    }
+
+    open fun clone(): Record {
+        val clone = Record(text)
+        cloneSubRecords(clone)
+        return clone
+    }
+
+    protected fun cloneSubRecords(clone: Record) {
+        for (subRecord in subRecords) {
+            clone.addSubRecord(subRecord.clone())
+        }
     }
 
 }

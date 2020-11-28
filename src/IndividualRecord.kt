@@ -17,11 +17,27 @@ class IndividualRecord(record: Record) : Record(record.text) {
         return getSubRecord(PARENT_FAMILY_TAG)?.getReference()
     }
 
+    fun removeParentFamily() {
+        removeSubRecord(PARENT_FAMILY_TAG)
+    }
+
+    fun addParentFamily(familyRecord: FamilyRecord) {
+        addSubRecord(Record("1${PARENT_FAMILY_TAG}${familyRecord.getReferenceId()}"))
+    }
+
     /**
      * Returns a list of spouse family reference ids
      */
     fun getFamilies(): List<String> {
         return getSubRecordReferences(SPOUSE_FAMILY_TAG)
+    }
+
+    fun removeFamilies() {
+        removeSubRecord(SPOUSE_FAMILY_TAG)
+    }
+
+    fun addFamily(familyRecord: FamilyRecord) {
+        addSubRecord(Record("1${SPOUSE_FAMILY_TAG}${familyRecord.getReferenceId()}"))
     }
 
     /**
@@ -61,4 +77,9 @@ class IndividualRecord(record: Record) : Record(record.text) {
         return getSubRecord(GENDER_TAG)?.text?.substring(6, 7)?.getOrNull(0)
     }
 
+    override fun clone(): IndividualRecord {
+        val clone = IndividualRecord(this)
+        cloneSubRecords(clone)
+        return clone
+    }
 }

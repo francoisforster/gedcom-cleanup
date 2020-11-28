@@ -1,4 +1,11 @@
-data class Event(val parentReferenceId: String?, val date: String?, val place: String?, val source: String?) {
+data class Event(
+    val parentReferenceId: String?,
+    val record: Record,
+    val date: String?,
+    val place: String?,
+    val source: String?,
+    val note: String?
+) {
     fun getYear(): Int? {
         return date?.substring(date.lastIndexOf(" ") + 1)?.toInt()
     }
