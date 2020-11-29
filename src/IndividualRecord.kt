@@ -58,17 +58,33 @@ class IndividualRecord(record: Record) : Record(record.text) {
      * Returns the name of the individual
      */
     fun getName(): String? {
+        val parts = getNameParts()
+        if (parts != null) {
+            if (parts.first == "") {
+                return parts.second
+            } else if (parts.second == "") {
+                return parts.first
+            }
+            return "${parts.first} ${parts.second}"
+        }
+        return null
+    }
+
+    fun getLastname(): String? {
+        val parts = getNameParts()
+        if (parts?.second == "") {
+            return null;
+        }
+        return parts?.second
+    }
+
+    private fun getNameParts(): Pair<String?, String?>? {
         val name = getSubRecord(NAME_TAG)?.text?.substring(7)
         val parts = name?.split("/")
         if (parts != null && parts.size > 1) {
             val firstname = parts[0].trim()
             val lastname = parts[1].trim()
-            if (firstname == "") {
-                return lastname
-            } else if (lastname == "") {
-                return firstname
-            }
-            return "$firstname $lastname"
+            return Pair(firstname, lastname)
         }
         return null
     }

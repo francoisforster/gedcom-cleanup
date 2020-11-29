@@ -1,3 +1,5 @@
+import java.util.*
+import kotlin.Comparator
 import kotlin.reflect.KFunction1
 import kotlin.reflect.KFunction2
 import kotlin.reflect.KFunction3
@@ -8,7 +10,7 @@ class GedcomCompare(
     private val createFromMissing: CreateFromSide
 ) {
     private val idMapping: MutableMap<String, String> = mutableMapOf()
-    private val comparedRecords: MutableSet<Pair<String?, String?>> = mutableSetOf()
+    private val comparedRecords: MutableSet<ComparisonContext> = mutableSetOf()
 
     fun compareFrom(leftRootIndividual: String, rightRootIndividual: String) {
         val leftIndividual = leftGedcom.getIndividual(leftRootIndividual)
@@ -16,27 +18,84 @@ class GedcomCompare(
         if (leftIndividual == null || rightIndividual == null) {
             println("Can't find root individuals")
         } else {
-            compareIndividuals(leftIndividual, rightIndividual)
+            val comparisonContext = ComparisonContext("", leftIndividual, rightIndividual)
+            if (createFromMissing != CreateFromSide.NONE) {
+                println("Mapping all matched individuals")
+                compareIndividuals(comparisonContext, true)
+                println("Done mapping all matched individuals")
+                comparedRecords.clear()
+            }
+            compareIndividuals(comparisonContext, false)
+        }
+    }
+
+    /**
+     * Compares the same individual from both the left and the right files.
+     * Traverses to matched parents, spouses and children
+     */
+    private fun compareIndividuals(
+        initialContext: ComparisonContext,
+        mapOnly: Boolean
+    ) {
+        val stack: Stack<ComparisonContext> = Stack()
+        stack.push(initialContext)
+
+        while (!stack.isEmpty()) {
+            val comparisonContext = stack.pop()
+            val leftIndividual = comparisonContext.leftIndividual
+            val rightIndividual = comparisonContext.rightIndividual
+            if (leftIndividual != null && rightIndividual != null) {
+                if (!comparedRecords.contains(comparisonContext)) {
+                    comparedRecords.add(comparisonContext)
+
+                    val leftLastname = leftIndividual.getLastname()
+                    val rightLastname = rightIndividual.getLastname()
+                    if (leftLastname != null && rightLastname != null && !isSimilar(leftLastname, rightLastname)) {
+                        // something isn't right if the lastnames are significantly different, so stop traversing
+                        // to their spouses, parents and children
+                        if (!mapOnly) {
+                            println("Individuals with significantly different lastnames: $leftLastname vs $rightLastname. Can't determine which side is valid.")
+                        }
+                    } else {
+                        val otherIndividuals = compareIndividuals(leftIndividual, rightIndividual, mapOnly)
+
+                        // recurse into matched parents, spouses and children
+                        for (otherIndividual in otherIndividuals) {
+                            if (otherIndividual.leftIndividual != null && otherIndividual.rightIndividual != null) {
+                                stack.push(otherIndividual)
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
     /**
      * Compares the same individual from both the left and the right files.
      * Name, birth, death difference or indicates if they are missing from one side.
-     * Traverses to matched parents, spouses and children or indicates if they are missing from one side.
+     * Returns matched parents, spouses and children or indicates if they are missing from one side.
      */
     private fun compareIndividuals(
         leftIndividual: IndividualRecord,
-        rightIndividual: IndividualRecord
-    ) {
+        rightIndividual: IndividualRecord,
+        mapOnly: Boolean
+    ): MutableList<ComparisonContext> {
         val leftReferenceId = leftIndividual.getReferenceId()
         val rightReferenceId = rightIndividual.getReferenceId()
-        if (!comparedRecords.contains(Pair(leftReferenceId, rightReferenceId))) {
-            comparedRecords.add(Pair(leftReferenceId, rightReferenceId))
+        if (mapOnly && leftReferenceId != null && rightReferenceId != null) {
+            if (createFromMissing == CreateFromSide.LEFT) {
+                idMapping[leftReferenceId] = rightReferenceId
+            } else if (createFromMissing == CreateFromSide.RIGHT) {
+                idMapping[rightReferenceId] = leftReferenceId
+            }
+        }
+
+        if (!mapOnly) {
             val leftName = leftIndividual.getName()
             val rightName = rightIndividual.getName()
             println("Comparing $leftName ($leftReferenceId}) vs $rightName (${rightIndividual.getReferenceId()})")
-            if (!similar(leftName, rightName)) {
+            if (!isSimilar(leftName, rightName)) {
                 println("\tNames are significantly different: $leftName vs $rightName")
             }
 
@@ -55,49 +114,40 @@ class GedcomCompare(
                 leftIndividual,
                 rightIndividual
             )
+        }
 
-            val otherIndividuals = mutableListOf<ComparisonContext>()
+        val otherIndividuals = mutableListOf<ComparisonContext>()
 
-            // parents
-            val leftFamily = leftGedcom.getFamily(leftIndividual.getParentFamily())
-            val rightFamily = rightGedcom.getFamily(rightIndividual.getParentFamily())
-            otherIndividuals.add(
-                ComparisonContext(
-                    "Father",
-                    leftGedcom.getIndividual(leftFamily?.getHusband()),
-                    rightGedcom.getIndividual(rightFamily?.getHusband()),
-                    null,
-                    null,
-                    leftIndividual,
-                    rightIndividual,
-                    null,
-                    null
-                )
-            )
-            otherIndividuals.add(
-                ComparisonContext(
-                    "Mother",
-                    leftGedcom.getIndividual(leftFamily?.getWife()),
-                    rightGedcom.getIndividual(rightFamily?.getWife()),
-                    null,
-                    null,
-                    leftIndividual,
-                    rightIndividual,
-                    null,
-                    null
-                )
-            )
+        // parents
+        val leftFamily = leftGedcom.getFamily(leftIndividual.getParentFamily())
+        val rightFamily = rightGedcom.getFamily(rightIndividual.getParentFamily())
+        otherIndividuals.add(
+            ComparisonContext(
+                "Father",
+                leftGedcom.getIndividual(leftFamily?.getHusband()),
+                rightGedcom.getIndividual(rightFamily?.getHusband())
+            ).withChild(leftIndividual, rightIndividual, true)
+        )
+        otherIndividuals.add(
+            ComparisonContext(
+                "Mother",
+                leftGedcom.getIndividual(leftFamily?.getWife()),
+                rightGedcom.getIndividual(rightFamily?.getWife())
+            ).withChild(leftIndividual, rightIndividual, false)
+        )
 
-            // marriages & children
-            val spousesAndChildren = compareFamilies(
-                leftIndividual.getFamilies(),
-                rightIndividual.getFamilies(),
-                leftIndividual,
-                rightIndividual
-            )
-            otherIndividuals.addAll(spousesAndChildren)
+        // marriages & children
+        val spousesAndChildren = compareFamilies(
+            leftIndividual.getFamilies(),
+            rightIndividual.getFamilies(),
+            leftIndividual,
+            rightIndividual,
+            mapOnly
+        )
+        otherIndividuals.addAll(spousesAndChildren)
 
-            // missing on one side only
+        // missing on one side only
+        if (!mapOnly) {
             for (otherIndividual in otherIndividuals) {
                 val leftOtherIndividual = otherIndividual.leftIndividual
                 val rightOtherIndividual = otherIndividual.rightIndividual
@@ -107,11 +157,12 @@ class GedcomCompare(
                         println("\tFound $label on the left but not the right: ${leftOtherIndividual.getName()} (${leftOtherIndividual.getReferenceId()}})")
                         if (createFromMissing == CreateFromSide.LEFT) {
                             val newIndividual =
-                                addIndividual(
+                                copyIndividual(
                                     leftOtherIndividual,
                                     otherIndividual.rightSpouse,
                                     otherIndividual.rightChild,
                                     otherIndividual.rightFamily,
+                                    otherIndividual.isMale,
                                     leftGedcom,
                                     rightGedcom
                                 )
@@ -123,11 +174,12 @@ class GedcomCompare(
                         println("\tFound $label on the right but not the left: ${rightOtherIndividual.getName()} (${rightOtherIndividual.getReferenceId()})")
                         if (createFromMissing == CreateFromSide.RIGHT) {
                             val newIndividual =
-                                addIndividual(
+                                copyIndividual(
                                     rightOtherIndividual,
                                     otherIndividual.leftSpouse,
                                     otherIndividual.leftChild,
                                     otherIndividual.leftFamily,
+                                    otherIndividual.isMale,
                                     rightGedcom,
                                     leftGedcom
                                 )
@@ -137,19 +189,8 @@ class GedcomCompare(
                     }
                 }
             }
-
-            // recurse into matched parents, spouses and children
-            for (otherIndividual in otherIndividuals) {
-                val leftOtherIndividual = otherIndividual.leftIndividual
-                val rightOtherIndividual = otherIndividual.rightIndividual
-                if (leftOtherIndividual != null && rightOtherIndividual != null) {
-                    compareIndividuals(
-                        leftOtherIndividual,
-                        rightOtherIndividual
-                    )
-                }
-            }
         }
+        return otherIndividuals
     }
 
     /**
@@ -160,7 +201,8 @@ class GedcomCompare(
         leftFamilyReferences: List<String>,
         rightFamilyReferences: List<String>,
         leftIndividual: IndividualRecord,
-        rightIndividual: IndividualRecord
+        rightIndividual: IndividualRecord,
+        mapOnly: Boolean
     ): List<ComparisonContext> {
         val leftFamilies = hydrateFamilies(leftFamilyReferences, leftGedcom)
         val rightFamilies = hydrateFamilies(rightFamilyReferences, rightGedcom)
@@ -169,35 +211,22 @@ class GedcomCompare(
         for (i in matchedFamilies.first.indices) {
             val leftFamily = matchedFamilies.first[i]
             val rightFamily = matchedFamilies.second[i]
-            if (!comparedRecords.contains(Pair(leftFamily?.getReferenceId(), rightFamily?.getReferenceId()))) {
-                comparedRecords.add(Pair(leftFamily?.getReferenceId(), rightFamily?.getReferenceId()))
-                result.add(
-                    ComparisonContext(
-                        "Husband",
-                        leftGedcom.getIndividual(leftFamily?.getHusband()),
-                        rightGedcom.getIndividual(rightFamily?.getHusband()),
-                        leftIndividual,
-                        rightIndividual,
-                        null,
-                        null,
-                        null,
-                        null
-                    )
-                )
-                result.add(
-                    ComparisonContext(
-                        "Wife",
-                        leftGedcom.getIndividual(leftFamily?.getWife()),
-                        rightGedcom.getIndividual(rightFamily?.getWife()),
-                        leftIndividual,
-                        rightIndividual,
-                        null,
-                        null,
-                        null,
-                        null
-                    )
-                )
+            result.add(
+                ComparisonContext(
+                    "Husband",
+                    leftGedcom.getIndividual(leftFamily?.getHusband()),
+                    rightGedcom.getIndividual(rightFamily?.getHusband())
+                ).withSpouse(leftIndividual, rightIndividual, true)
+            )
+            result.add(
+                ComparisonContext(
+                    "Wife",
+                    leftGedcom.getIndividual(leftFamily?.getWife()),
+                    rightGedcom.getIndividual(rightFamily?.getWife())
+                ).withSpouse(leftIndividual, rightIndividual, false)
+            )
 
+            if (!mapOnly) {
                 compareEvents(
                     "Marriage",
                     leftFamily?.getMarriage(),
@@ -205,27 +234,21 @@ class GedcomCompare(
                     leftFamily,
                     rightFamily
                 )
+            }
 
-                // children
-                if (leftFamily != null && rightFamily != null) {
-                    val leftChildren = hydrateIndividuals(leftFamily.getChildren(), leftGedcom)
-                    val rightChildren = hydrateIndividuals(rightFamily.getChildren(), rightGedcom)
-                    val matchedChildren = matchRecords(leftChildren, rightChildren, ::matchIndividualScore)
-                    for (j in matchedChildren.first.indices) {
-                        result.add(
-                            ComparisonContext(
-                                "Child",
-                                matchedChildren.first[j],
-                                matchedChildren.second[j],
-                                null,
-                                null,
-                                null,
-                                null,
-                                leftFamily,
-                                rightFamily
-                            )
-                        )
-                    }
+            // children
+            if (leftFamily != null && rightFamily != null) {
+                val leftChildren = hydrateIndividuals(leftFamily.getChildren(), leftGedcom)
+                val rightChildren = hydrateIndividuals(rightFamily.getChildren(), rightGedcom)
+                val matchedChildren = matchRecords(leftChildren, rightChildren, ::matchIndividualScore)
+                for (j in matchedChildren.first.indices) {
+                    result.add(
+                        ComparisonContext(
+                            "Child",
+                            matchedChildren.first[j],
+                            matchedChildren.second[j]
+                        ).withFamily(leftFamily, rightFamily)
+                    )
                 }
             }
         }
@@ -309,21 +332,17 @@ class GedcomCompare(
     ): Int {
         var result = 0
         if (leftFamily.getMarriage()?.matches(rightFamily.getMarriage()) == true) {
-            result += 20
+            result += 40
         }
-        if (similar(
-                leftGedcom.getIndividual(leftFamily.getHusband())?.getName(),
-                rightGedcom.getIndividual(rightFamily.getHusband())?.getName()
-            )
-        ) {
-            result += 5
+        var leftHusband = leftGedcom.getIndividual(leftFamily.getHusband())
+        var rightHusband = rightGedcom.getIndividual(rightFamily.getHusband())
+        if (leftHusband != null && rightHusband != null) {
+            result += matchIndividualScore(leftHusband, rightHusband)
         }
-        if (similar(
-                leftGedcom.getIndividual(leftFamily.getWife())?.getName(),
-                rightGedcom.getIndividual(rightFamily.getWife())?.getName()
-            )
-        ) {
-            result += 4
+        var leftWife = leftGedcom.getIndividual(leftFamily.getWife())
+        var rightWife = rightGedcom.getIndividual(rightFamily.getWife())
+        if (leftWife != null && rightWife != null) {
+            result += matchIndividualScore(leftWife, rightWife)
         }
         return result
     }
@@ -342,8 +361,10 @@ class GedcomCompare(
         if (leftIndividual.getDeath()?.matches(rightIndividual.getDeath()) == true) {
             result += 10
         }
-        if (similar(leftIndividual.getName(), rightIndividual.getName())) {
-            result += 5
+        val leftName = leftIndividual.getName()
+        val rightName = rightIndividual.getName()
+        if (leftName != null && rightName != null && isSimilar(leftName, rightName)) {
+            result += 5 - distance(leftName, rightName)
         }
         return result
     }
@@ -364,80 +385,56 @@ class GedcomCompare(
         return individuals
     }
 
-    private fun compareEvents(
-        label: String,
-        event1: Event?,
-        event2: Event?,
-        leftRecord: Record?,
-        rightRecord: Record?
-    ) {
-        var leftEvent = event1
-        if (event1?.date == null && event1?.place == null) {
-            leftEvent = null
-        }
-        var rightEvent = event2
-        if (event2?.date == null && event2?.place == null) {
-            rightEvent = null
-        }
-        if (leftEvent == null || rightEvent == null) {
-            if (leftEvent != null) {
-                println("\tFound $label on the left but not the right: $leftEvent")
-                if (createFromMissing == CreateFromSide.LEFT) {
-                    addEvent(leftEvent, rightRecord, leftGedcom, rightGedcom)
-                    println("\tAdded $label from the left to the right file")
-                }
-            }
-            if (rightEvent != null) {
-                println("\tFound $label on the right but not the left: $rightEvent")
-                if (createFromMissing == CreateFromSide.RIGHT) {
-                    addEvent(rightEvent, leftRecord, rightGedcom, leftGedcom)
-                    println("\tAdded $label from the right to the left file")
-                }
-            }
-        } else {
-            if (!leftEvent.matches(rightEvent)) {
-                println("\t$label different: $leftEvent vs $rightEvent")
-            }
-        }
-    }
 
-
-    private fun addIndividual(
+    /**
+     * Copies an individual record from one gedcom to another gedcom file, along with family records and/or
+     * parent/child relationship as needed
+     */
+    private fun copyIndividual(
         individual: IndividualRecord,
         spouse: IndividualRecord?,
         child: IndividualRecord?,
         family: FamilyRecord?,
+        isMale: Boolean,
         fromGedcom: Gedcom,
         toGedcom: Gedcom
     ): IndividualRecord {
-        val referenceId = toGedcom.generateIndividualReferenceId()
-        val clone = individual.clone()
-        clone.setReferenceId(referenceId)
-        toGedcom.addIndividual(referenceId, clone)
-        // copy Notes and Sources
-        copyReferences(
-            NOTE_TAG,
-            clone,
-            Gedcom::generateNoteReferenceId,
-            Gedcom::getNote,
-            Gedcom::addNote,
-            NoteRecord::clone,
-            fromGedcom,
-            toGedcom
-        )
-        copyReferences(
-            SOURCE_TAG,
-            clone,
-            Gedcom::generateSourceReferenceId,
-            Gedcom::getSource,
-            Gedcom::addSource,
-            SourceRecord::clone,
-            fromGedcom,
-            toGedcom
-        )
-        // clear families
-        clone.removeParentFamily()
-        clone.removeFamilies()
+        val individualReferenceId = individual.getReferenceId()
+        var clone = toGedcom.getIndividual(idMapping[individualReferenceId])
+        if (clone == null) {
+            clone = individual.clone()
+            val newId = toGedcom.generateIndividualReferenceId()
+            clone.setReferenceId(newId)
+            toGedcom.addIndividual(newId, clone)
+            if (individualReferenceId != null) {
+                idMapping[individualReferenceId] = newId
+            }
+            // copy Notes and Sources
+            copyReferences(
+                NOTE_TAG,
+                clone,
+                Gedcom::generateNoteReferenceId,
+                Gedcom::getNote,
+                Gedcom::addNote,
+                NoteRecord::clone,
+                fromGedcom,
+                toGedcom
+            )
+            copyReferences(
+                SOURCE_TAG,
+                clone,
+                Gedcom::generateSourceReferenceId,
+                Gedcom::getSource,
+                Gedcom::addSource,
+                SourceRecord::clone,
+                fromGedcom,
+                toGedcom
+            )
+            // clear families
+            clone.removeParentFamily()
+            clone.removeFamilies()
+        }
+        val referenceId = clone.getReferenceId()!!
         // add spouse
         if (spouse != null) {
             val familyReferenceId = toGedcom.generateFamilyReferenceId()
@@ -445,7 +442,7 @@ class GedcomCompare(
             toGedcom.addFamily(familyReferenceId, familyClone)
             var husband: IndividualRecord? = clone
             var wife: IndividualRecord? = spouse
-            if ((husband?.getGender() != null && husband.getGender() == 'F') || (wife?.getGender() != null && wife.getGender() == 'M')) {
+            if (!isMale) {
                 husband = spouse
                 wife = clone
             }
@@ -478,7 +475,7 @@ class GedcomCompare(
                     parentFamily.addChild(childReferenceId)
                 }
             }
-            if (parentFamily.getHusband() == null || clone.getGender() == 'M') {
+            if (isMale) {
                 parentFamily.setHusband(referenceId)
             } else {
                 parentFamily.setWife(referenceId)
@@ -489,6 +486,43 @@ class GedcomCompare(
         return clone
     }
 
+    /**
+     * Compares 2 specific events
+     */
+    private fun compareEvents(
+        label: String,
+        leftEvent: Event?,
+        rightEvent: Event?,
+        leftRecord: Record?,
+        rightRecord: Record?
+    ) {
+        if (leftEvent == null || rightEvent == null) {
+            if (leftEvent != null) {
+                println("\tFound $label on the left but not the right: $leftEvent")
+                if (createFromMissing == CreateFromSide.LEFT) {
+                    if (copyEvent(leftEvent, rightRecord, leftGedcom, rightGedcom)) {
+                        println("\tAdded $label from the left to the right file")
+                    }
+                }
+            }
+            if (rightEvent != null) {
+                println("\tFound $label on the right but not the left: $rightEvent")
+                if (createFromMissing == CreateFromSide.RIGHT) {
+                    if (copyEvent(rightEvent, leftRecord, rightGedcom, leftGedcom)) {
+                        println("\tAdded $label from the right to the left file")
+                    }
+                }
+            }
+        } else {
+            if (!leftEvent.matches(rightEvent)) {
+                println("\t$label different: $leftEvent vs $rightEvent")
+            }
+        }
+    }
+
+    /**
+     * Copies note and source references from one gedcom to another gedcom file
+     */
     private fun <T : Record> copyReferences(
         tag: String,
         record: Record,
@@ -526,46 +560,42 @@ class GedcomCompare(
         }
     }
 
-    private fun addEvent(
+    /**
+     * Copies an event and its associated notes and sources from one gedcom to another gedcom file
+     */
+    private fun copyEvent(
         event: Event,
         record: Record?,
         fromGedcom: Gedcom,
         toGedcom: Gedcom
-    ) {
-        val clone = event.record.clone()
-        record?.addSubRecord(clone)
-        // copy Notes and Sources
-        copyReferences(
-            NOTE_TAG,
-            clone,
-            Gedcom::generateNoteReferenceId,
-            Gedcom::getNote,
-            Gedcom::addNote,
-            NoteRecord::clone,
-            fromGedcom,
-            toGedcom
-        )
-        copyReferences(
-            SOURCE_TAG,
-            clone,
-            Gedcom::generateSourceReferenceId,
-            Gedcom::getSource,
-            Gedcom::addSource,
-            SourceRecord::clone,
-            fromGedcom,
-            toGedcom
-        )
+    ): Boolean {
+        if (record != null) {
+            val clone = event.record.clone()
+            record.addSubRecord(clone)
+            // copy Notes and Sources
+            copyReferences(
+                NOTE_TAG,
+                clone,
+                Gedcom::generateNoteReferenceId,
+                Gedcom::getNote,
+                Gedcom::addNote,
+                NoteRecord::clone,
+                fromGedcom,
+                toGedcom
+            )
+            copyReferences(
+                SOURCE_TAG,
+                clone,
+                Gedcom::generateSourceReferenceId,
+                Gedcom::getSource,
+                Gedcom::addSource,
+                SourceRecord::clone,
+                fromGedcom,
+                toGedcom
+            )
+            return true
+        }
+        return false
     }
 
-    private data class ComparisonContext(
-        val label: String,
-        var leftIndividual: IndividualRecord?,
-        var rightIndividual: IndividualRecord?,
-        var leftSpouse: IndividualRecord?,
-        var rightSpouse: IndividualRecord?,
-        var leftChild: IndividualRecord?,
-        var rightChild: IndividualRecord?,
-        var leftFamily: FamilyRecord?,
-        var rightFamily: FamilyRecord?
-    )
 }

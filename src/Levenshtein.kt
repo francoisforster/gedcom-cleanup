@@ -31,9 +31,13 @@ fun levenshtein(lhs: CharSequence, rhs: CharSequence): Int {
     return cost[lhsLength - 1]
 }
 
-fun similar(left: String?, right: String?): Boolean {
+fun isSimilar(left: String?, right: String?): Boolean {
     if (left == null || right == null) {
-        return left == null && right == null
+        return false
     }
-    return levenshtein(left, right) < (left.length + right.length) / 6
+    return distance(left, right) <= Math.max(1, (left.length + right.length) / 6)
+}
+
+fun distance(left: String, right: String): Int {
+    return levenshtein(left, right)
 }
