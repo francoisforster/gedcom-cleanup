@@ -316,6 +316,11 @@ class Gedcom {
         return null
     }
 
+    fun getRecords(): Map<String, Record> {
+        return records
+    }
+
+
     /**
      * Saves the GEDCOM records to a file
      */
