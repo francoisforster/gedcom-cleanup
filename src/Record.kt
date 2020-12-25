@@ -2,6 +2,7 @@ import java.io.Writer
 
 private const val DATE_TAG = " DATE "
 private const val PLACE_TAG = " PLAC "
+const val CONT_TAG = " CONT "
 
 /**
  * Generic nestable record which contains a line of text and sub records
@@ -36,6 +37,16 @@ open class Record(var text: String) {
         for (subRecord in subRecords) {
             if (subRecord.text.contains(tag)) {
                 references.safeAdd(subRecord.getReference())
+            }
+        }
+        return references
+    }
+
+    fun getSubRecordsText(tag: String): List<String> {
+        val references = mutableListOf<String>()
+        for (subRecord in subRecords) {
+            if (subRecord.text.contains(tag)) {
+                references.safeAdd(subRecord.text.substring(7))
             }
         }
         return references

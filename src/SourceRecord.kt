@@ -14,12 +14,17 @@ class SourceRecord(record: Record) : Record(record.text) {
         return getSubRecord(TEXT_TAG)?.text
     }
 
-    override fun matches(otherRecord: Record?): Boolean {
-        return otherRecord is SourceRecord &&
-                matches(getSourceTitle(), otherRecord.getSourceTitle()) &&
-                matches(getSourceText(), otherRecord.getSourceText())
+    fun getSourceContinuation(): List<String>? {
+        return getSubRecord(TEXT_TAG)?.getSubRecordsText(CONT_TAG)
     }
-    
+
+    override fun matches(otherRecord: Record?): Boolean {
+        return otherRecord is SourceRecord
+                && matches(getSourceTitle(), otherRecord.getSourceTitle())
+                && matches(getSourceText(), otherRecord.getSourceText())
+                && getSourceContinuation() == otherRecord.getSourceContinuation()
+    }
+
     override fun clone(): SourceRecord {
         val clone = SourceRecord(this)
         cloneSubRecords(clone)
