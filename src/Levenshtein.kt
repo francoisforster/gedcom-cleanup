@@ -32,6 +32,9 @@ fun levenshtein(lhs: CharSequence, rhs: CharSequence): Int {
 }
 
 fun isSimilar(left: String?, right: String?): Boolean {
+    if (left == null && right == null) {
+        return true
+    }
     if (left == null || right == null) {
         return false
     }

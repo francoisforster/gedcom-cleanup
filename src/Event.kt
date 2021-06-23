@@ -15,8 +15,14 @@ data class Event(
     }
 
     fun matches(other: Event?): Boolean {
-        val shortPlace = place?.substring(0, place.indexOf(","))
-        val otherShortPlace = other?.place?.substring(0, other.place.indexOf(","))
+        var shortPlace = place
+        if (place?.contains(',') == true) {
+            shortPlace = place?.substring(0, place.indexOf(","))
+        }
+        var otherShortPlace = other?.place
+        if (other?.place?.contains(',') == true) {
+            otherShortPlace = other?.place?.substring(0, other?.place.indexOf(","))
+        }
         return date == other?.date && shortPlace == otherShortPlace
     }
 }
