@@ -17,11 +17,11 @@ data class Event(
     fun matches(other: Event?): Boolean {
         var shortPlace = place
         if (place?.contains(',') == true) {
-            shortPlace = place?.substring(0, place.indexOf(","))
+            shortPlace = place.substring(0, place.indexOf(","))
         }
         var otherShortPlace = other?.place
         if (other?.place?.contains(',') == true) {
-            otherShortPlace = other?.place?.substring(0, other?.place.indexOf(","))
+            otherShortPlace = other.place.substring(0, other.place.indexOf(","))
         }
         return date == other?.date && shortPlace == otherShortPlace
     }
