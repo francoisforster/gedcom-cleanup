@@ -7,13 +7,17 @@ const val TRAILER = "0 TRLR"
 
 const val SOURCE_TAG = " SOUR "
 const val SOURCE_REFERENCE_PREFIX = "@S"
+const val SOURCE_REFERENCE_TYPE = "SOUR"
 
 const val NOTE_TAG = " NOTE "
 const val NOTE_REFERENCE_PREFIX = "@N"
+const val NOTE_REFERENCE_TYPE = "NOTE"
 
 const val INDIVIDUAL_REFERENCE_PREFIX = "@I"
+const val INDIVIDUAL_REFERENCE_TYPE = "INDI"
 
 const val FAMILY_REFERENCE_PREFIX = "@F"
+const val FAMILY_REFERENCE_TYPE = "FAM"
 
 private const val utf8BOM = "\uFEFF"
 
@@ -30,10 +34,10 @@ class Gedcom {
 
     private val records = mutableMapOf<String, Record>()
 
-    private val individualIds = mutableSetOf<Int>()
-    private val familyIds = mutableSetOf<Int>()
-    private val noteIds = mutableSetOf<Int>()
-    private val sourceIds = mutableSetOf<Int>()
+    private val individualIds = mutableSetOf<Long>()
+    private val familyIds = mutableSetOf<Long>()
+    private val noteIds = mutableSetOf<Long>()
+    private val sourceIds = mutableSetOf<Long>()
 
     /**
      * Parse a GEDCOM file. Doesn't validate the GEDCOM format.
@@ -54,20 +58,20 @@ class Gedcom {
             if (level == 0) {
                 val reference = record.getReferenceId()
                 if (reference != null) {
-                    record = when (reference.substring(0, 2)) {
-                        NOTE_REFERENCE_PREFIX -> {
+                    record = when (record.getReference()) {
+                        NOTE_REFERENCE_TYPE -> {
                             noteIds.add(parseReferenceId(reference))
                             NoteRecord(record)
                         }
-                        SOURCE_REFERENCE_PREFIX -> {
+                        SOURCE_REFERENCE_TYPE -> {
                             sourceIds.add(parseReferenceId(reference))
                             SourceRecord(record)
                         }
-                        INDIVIDUAL_REFERENCE_PREFIX -> {
+                        INDIVIDUAL_REFERENCE_TYPE -> {
                             individualIds.add(parseReferenceId(reference))
                             IndividualRecord(record)
                         }
-                        FAMILY_REFERENCE_PREFIX ->  {
+                        FAMILY_REFERENCE_TYPE ->  {
                             familyIds.add(parseReferenceId(reference))
                             FamilyRecord(record)
                         }
@@ -349,15 +353,15 @@ class Gedcom {
         return generateReferenceId(sourceIds, SOURCE_REFERENCE_PREFIX)
     }
 
-    private fun generateReferenceId(ids: MutableSet<Int>, prefix: String): String {
-        var id = 1
+    private fun generateReferenceId(ids: MutableSet<Long>, prefix: String): String {
+        var id: Long = 1
         while (ids.contains(id)) {
             id++
         }
         return "${prefix}${id}@"
     }
 
-    private fun parseReferenceId(referenceIdStr: String): Int {
-        return referenceIdStr.substring(2, referenceIdStr.length - 1).toInt()
+    private fun parseReferenceId(referenceIdStr: String): Long {
+        return referenceIdStr.substring(2, referenceIdStr.length - 1).toLong()
     }
 }
