@@ -334,13 +334,13 @@ class GedcomCompare(
         if (leftFamily.getMarriage()?.matches(rightFamily.getMarriage()) == true) {
             result += 40
         }
-        var leftHusband = leftGedcom.getIndividual(leftFamily.getHusband())
-        var rightHusband = rightGedcom.getIndividual(rightFamily.getHusband())
+        val leftHusband = leftGedcom.getIndividual(leftFamily.getHusband())
+        val rightHusband = rightGedcom.getIndividual(rightFamily.getHusband())
         if (leftHusband != null && rightHusband != null) {
             result += matchIndividualScore(leftHusband, rightHusband)
         }
-        var leftWife = leftGedcom.getIndividual(leftFamily.getWife())
-        var rightWife = rightGedcom.getIndividual(rightFamily.getWife())
+        val leftWife = leftGedcom.getIndividual(leftFamily.getWife())
+        val rightWife = rightGedcom.getIndividual(rightFamily.getWife())
         if (leftWife != null && rightWife != null) {
             result += matchIndividualScore(leftWife, rightWife)
         }
