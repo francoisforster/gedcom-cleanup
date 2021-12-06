@@ -2,15 +2,17 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.format.DateTimeParseException
+import java.util.Locale
 
 private val shortFormatter = getFormatter("d MMM yyyy")
 private val longFormatter = getFormatter("d MMMM yyyy")
 
 fun getFormatter(pattern: String): DateTimeFormatter {
     val builder = DateTimeFormatterBuilder()
-    builder.parseCaseInsensitive()
-    builder.appendPattern(pattern)
-    return builder.toFormatter()
+    return builder.parseCaseInsensitive()
+            .appendPattern(pattern)
+            .toFormatter()
+            .withLocale(Locale.US)
 }
 
 data class Event(
