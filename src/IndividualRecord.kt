@@ -2,6 +2,7 @@ private const val PARENT_FAMILY_TAG = " FAMC "
 private const val SPOUSE_FAMILY_TAG = " FAMS "
 private const val BIRTH_TAG = " BIRT"
 private const val DEATH_TAG = " DEAT"
+private const val CENSUS_TAG = " CENS"
 private const val NAME_TAG = " NAME "
 private const val GENDER_TAG = " SEX "
 
@@ -54,6 +55,19 @@ class IndividualRecord(record: Record) : Record(record.text) {
         return getSubRecordEndsWith(DEATH_TAG)?.parseEvent(getReferenceId())
     }
 
+    fun getCensus(): List<Event> {
+        val census = mutableListOf<Event>()
+        val records = getSubRecordsEndsWith(CENSUS_TAG)
+        for (record in records) {
+            census.add(record.parseEvent(getReferenceId()))
+        }
+        return census
+    }
+
+    fun getNote(): String? {
+    	return getSubRecord(NOTE_TAG)?.getReference()
+    }
+
     /**
      * Returns the name of the individual
      */
@@ -73,7 +87,7 @@ class IndividualRecord(record: Record) : Record(record.text) {
     fun getLastname(): String? {
         val parts = getNameParts()
         if (parts?.second == "") {
-            return null;
+            return null
         }
         return parts?.second
     }

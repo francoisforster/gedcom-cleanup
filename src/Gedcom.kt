@@ -19,11 +19,18 @@ const val INDIVIDUAL_REFERENCE_TYPE = "INDI"
 const val FAMILY_REFERENCE_PREFIX = "@F"
 const val FAMILY_REFERENCE_TYPE = "FAM"
 
-private const val utf8BOM = "\uFEFF"
+private const val utf8BOM = "\u00ef\u00bb\u00bf"
+private const val utf16BOM = "\uFEFF"
 
 fun <T> MutableCollection<T>.safeAdd(element: T?) {
     if (element != null) {
         add(element)
+    }
+}
+
+fun <T> MutableCollection<T>.safeAddAll(elements: Collection<T>?) {
+    if (elements != null) {
+        addAll(elements)
     }
 }
 
@@ -51,6 +58,9 @@ class Gedcom {
         var line = br.readLine()
         while (line != null) {
             if (line.startsWith(utf8BOM)) {
+                line = line.substring(3)
+            }
+            if (line.startsWith(utf16BOM)) {
                 line = line.substring(1)
             }
             val level = Integer.parseInt(line.substring(0, 1))
@@ -240,6 +250,7 @@ class Gedcom {
                 val individual = getIndividual(key)
                 allEvents.safeAdd(individual?.getBirth())
                 allEvents.safeAdd(individual?.getDeath())
+                allEvents.safeAddAll(individual?.getCensus())
             } else if (key.startsWith(FAMILY_REFERENCE_PREFIX)) {
                 val family = getFamily(key)
                 allEvents.safeAdd(family?.getMarriage())

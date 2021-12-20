@@ -32,6 +32,16 @@ open class Record(var text: String) {
         return null
     }
 
+    fun getSubRecordsEndsWith(tag: String): List<Record> {
+        val records = mutableListOf<Record>()
+        for (subRecord in subRecords) {
+            if (subRecord.text.trim().endsWith(tag)) {
+                records.add(subRecord)
+            }
+        }
+        return records
+    }
+
     fun getSubRecordReferences(tag: String): List<String> {
         val references = mutableListOf<String>()
         for (subRecord in subRecords) {
@@ -117,7 +127,7 @@ open class Record(var text: String) {
                 }
             }
         }
-        return Event(parentReferenceId, this, date, place, source, note)
+        return Event(text.substring(2).trim(), parentReferenceId, this, date, place, source, note)
     }
 
     open fun clone(): Record {

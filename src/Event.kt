@@ -16,6 +16,7 @@ fun getFormatter(pattern: String): DateTimeFormatter {
 }
 
 data class Event(
+    val type: String?,
     val parentReferenceId: String?,
     val record: Record,
     val date: String?,
@@ -28,7 +29,7 @@ data class Event(
     }
 
     override fun toString(): String {
-        return "Event(date=$date, place=$place)"
+        return "Event(type=$type, date=$date, place=$place)"
     }
 
     fun matches(other: Event?): Boolean {

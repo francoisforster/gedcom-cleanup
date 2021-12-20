@@ -4,7 +4,7 @@
 class NoteRecord(record: Record) : Record(record.text) {
 
     fun getNoteText(): String {
-        return text.substring(7)
+        return text.substring(text.indexOf(NOTE_TAG) + 6)
     }
 
     fun getNoteContinuation(): List<String> {
