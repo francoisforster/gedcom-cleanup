@@ -1,10 +1,10 @@
-private const val PARENT_FAMILY_TAG = " FAMC "
-private const val SPOUSE_FAMILY_TAG = " FAMS "
-private const val BIRTH_TAG = " BIRT"
-private const val DEATH_TAG = " DEAT"
-private const val CENSUS_TAG = " CENS"
-private const val NAME_TAG = " NAME "
-private const val GENDER_TAG = " SEX "
+const val PARENT_FAMILY_TAG = " FAMC "
+const val SPOUSE_FAMILY_TAG = " FAMS "
+const val BIRTH_TAG = " BIRT"
+const val DEATH_TAG = " DEAT"
+const val CENSUS_TAG = " CENS"
+const val NAME_TAG = " NAME "
+const val GENDER_TAG = " SEX "
 
 /**
  * Specific record for individuals

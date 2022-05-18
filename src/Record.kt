@@ -1,7 +1,7 @@
 import java.io.Writer
 
-private const val DATE_TAG = " DATE "
-private const val PLACE_TAG = " PLAC "
+const val DATE_TAG = " DATE "
+const val PLACE_TAG = " PLAC "
 const val CONT_TAG = " CONT "
 
 /**

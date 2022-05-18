@@ -1,5 +1,5 @@
-private const val TITLE_TAG = " TITL "
-private const val TEXT_TAG = " TEXT "
+const val TITLE_TAG = " TITL "
+const val TEXT_TAG = " TEXT "
 
 /**
  * Specific record for sources
