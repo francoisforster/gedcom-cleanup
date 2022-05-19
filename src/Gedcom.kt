@@ -335,6 +335,10 @@ class Gedcom {
         return records
     }
 
+    fun addHead(record: Record) {
+        records["HEAD"] = record
+    }
+
 
     /**
      * Saves the GEDCOM records to a file
