@@ -262,7 +262,7 @@ class Gedcom {
             if (selectionCriteria.invoke(event)) {
                 matchedEventCount++
                 if (!validationCriteria.invoke(event, this)) {
-                    println("Validation failed for ${event.parentReferenceId}")
+                    println("Validation failed for ${event.parentReferenceId} for ${event}")
                     failedValidationCount++
                 }
             }
