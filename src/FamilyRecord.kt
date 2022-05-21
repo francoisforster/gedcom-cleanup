@@ -1,4 +1,3 @@
-private const val FAMILY_TAG = "FAM"
 private const val HUSBAND_TAG = " HUSB "
 private const val WIFE_TAG = " WIFE "
 private const val CHILD_TAG = " CHIL "
@@ -60,6 +59,6 @@ class FamilyRecord(record: Record) : Record(record.text) {
 }
 
 fun newFamily(referenceId: String): FamilyRecord {
-    return FamilyRecord(Record("0 $referenceId $FAMILY_TAG"))
+    return FamilyRecord(Record("0 $referenceId $FAMILY_REFERENCE_TYPE"))
 }
 

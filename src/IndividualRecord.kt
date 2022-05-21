@@ -113,3 +113,8 @@ class IndividualRecord(record: Record) : Record(record.text) {
         return clone
     }
 }
+
+
+fun newIndividual(referenceId: String): IndividualRecord {
+    return IndividualRecord(Record("0 $referenceId $INDIVIDUAL_REFERENCE_TYPE"))
+}
