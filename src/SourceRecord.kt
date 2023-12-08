@@ -30,4 +30,9 @@ class SourceRecord(record: Record) : Record(record.text) {
         cloneSubRecords(clone)
         return clone
     }
+	
+	override fun toString(): String {
+        return "Source(title=${getSourceTitle()}, text=${getSourceText()}, continuation=${getSourceContinuation()})"
+    }
+
 }

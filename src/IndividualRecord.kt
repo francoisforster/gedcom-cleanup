@@ -3,6 +3,7 @@ const val SPOUSE_FAMILY_TAG = " FAMS "
 const val BIRTH_TAG = " BIRT"
 const val DEATH_TAG = " DEAT"
 const val CENSUS_TAG = " CENS"
+const val RESIDENCE_TAG = " RESI"
 const val NAME_TAG = " NAME "
 const val GENDER_TAG = " SEX "
 
@@ -56,16 +57,28 @@ class IndividualRecord(record: Record) : Record(record.text) {
     }
 
     fun getCensus(): List<Event> {
-        val census = mutableListOf<Event>()
-        val records = getSubRecordsEndsWith(CENSUS_TAG)
+        return getSubRecords(CENSUS_TAG)
+    }
+
+    fun getResidences(): List<Event> {
+        return getSubRecords(RESIDENCE_TAG)
+    }
+	
+    fun getSubRecords(type: String): List<Event> {
+        val subRecords = mutableListOf<Event>()
+        val records = getSubRecordsEndsWith(type)
         for (record in records) {
-            census.add(record.parseEvent(getReferenceId()))
+            subRecords.add(record.parseEvent(getReferenceId()))
         }
-        return census
+        return subRecords
     }
 
     fun getNote(): String? {
     	return getSubRecord(NOTE_TAG)?.getReference()
+    }
+
+    fun getSource(): String? {
+    	return getSubRecord(SOURCE_TAG)?.getReference()
     }
 
     /**
@@ -90,6 +103,11 @@ class IndividualRecord(record: Record) : Record(record.text) {
             return null
         }
         return parts?.second
+    }
+
+    fun getFirstname(): String? {
+        val parts = getNameParts()
+        return parts?.first
     }
 
     private fun getNameParts(): Pair<String?, String?>? {

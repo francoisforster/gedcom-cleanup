@@ -33,17 +33,24 @@ data class Event(
     }
 
     fun matches(other: Event?): Boolean {
+        return datesMatch(date, other?.date) && getShortPlace() == other?.getShortPlace()
+    }
+	
+	fun parseDate(): LocalDate? {
+		if (date == null) {
+			return null
+		}
+        return parseDate(date)
+    }
+	
+	fun getShortPlace(): String? {
         var shortPlace = place
         if (place?.contains(',') == true) {
             shortPlace = place.substring(0, place.indexOf(","))
         }
-        var otherShortPlace = other?.place
-        if (other?.place?.contains(',') == true) {
-            otherShortPlace = other.place.substring(0, other.place.indexOf(","))
-        }
-        return datesMatch(date, other?.date) && shortPlace == otherShortPlace
-    }
-
+		return shortPlace
+	}
+	
     private fun datesMatch(date: String?, otherDate: String?): Boolean {
         if (date == null || otherDate == null) {
             return date == otherDate

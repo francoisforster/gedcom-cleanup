@@ -51,7 +51,7 @@ class Gedcom {
      */
     fun parseFile(filename: String) {
         records.clear()
-        val br = BufferedReader(FileReader(filename))
+        val br = BufferedReader(FileReader(filename, java.nio.charset.StandardCharsets.UTF_8))
         val recordStack = Stack<Record>()
         var previousRecord: Record? = null
         var previousLevel = 0

@@ -25,4 +25,9 @@ class NoteRecord(record: Record) : Record(record.text) {
         cloneSubRecords(clone)
         return clone
     }
+	
+	override fun toString(): String {
+        return "Note(text=${getNoteText()}, continuation=${getNoteContinuation()})"
+    }
+
 }
